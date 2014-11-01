@@ -1,6 +1,14 @@
 %{
-#include <stdio.h>
+/*
+	This will scan the input.
+	Note that I don't conform exclusively to his list of tokens
+	I changed them slightly so that parsing would be more straightforward.
+	Keywords especially have their own token type, instead of just being KEYWORD
+*/
+
 #include "y.tab.h"
+
+
 %}
 %%
 

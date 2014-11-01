@@ -1,6 +1,12 @@
 %{
+/*
+	Handles parsing.
+	Rigth now, argument lists do not work, since I'm hoping I can come up with something better than returning a linked list.
+
+	Maybe we should use this as the entry point? It could simply call functions from another module to run the different commands, which would also improve modularity.
+	It also automatically handles multiple line scripts
+*/
 #include <stdio.h>
-char **lastLine = NULL;
 %}
 
 %token EQ COMMENT DEFPROMPT ASSIGNTO CD LISTJOBS BYE RUN BG
