@@ -7,6 +7,7 @@
 	It also automatically handles multiple line scripts
 */
 #include <stdio.h>
+#include "shell_commands.h"
 %}
 
 %token EQ COMMENT DEFPROMPT ASSIGNTO CD LISTJOBS BYE RUN BG
@@ -48,7 +49,7 @@ assign:
 
 listjobs:
 	LISTJOBS {
-		printf("command<listjobs>()\n");
+		cmd_listjobs();
 	}
 	;
 
