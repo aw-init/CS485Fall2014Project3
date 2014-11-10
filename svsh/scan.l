@@ -13,6 +13,7 @@
 %%
 
 
+[\n] { return NEWLINE; }
 
 \= { return EQ; }
 
@@ -20,30 +21,30 @@
 
 \<bg\> { return BG; }
 
-^defprompt { return DEFPROMPT; }
+defprompt { return DEFPROMPT; }
 
-^cd { return CD;  }
+cd { return CD;  }
 
-^run { return RUN; }
+run { return RUN; }
 
-^listjobs { return LISTJOBS;  }
+listjobs { return LISTJOBS;  }
 
-^bye { return BYE;  }
+bye { return BYE;  }
 
-^assignto { return ASSIGNTO;  }
+assignto { return ASSIGNTO;  }
 
 \".+\" {
-	yylval.str = strdup(yytext);
+	yylval.string = strdup(yytext);
 	return STRING;
 }
 
 \$[A-Z0-9a-z]+ {
-	yylval.str = strdup(yytext);
+	yylval.string = strdup(yytext);
 	return VARIABLE;
 }
 
 [^ \n\t=\#]+ {
-	yylval.str = strdup(yytext);
+	yylval.string = strdup(yytext);
 	return WORD;
 }
 

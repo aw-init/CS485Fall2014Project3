@@ -7,18 +7,29 @@
 	It also automatically handles multiple line scripts
 */
 #include <stdio.h>
+#include "shell_commands.h"
+#include "llist.h"
 %}
-
-%token EQ COMMENT DEFPROMPT ASSIGNTO CD LISTJOBS BYE RUN BG
+%define parse.error verbose
+%token EQ COMMENT DEFPROMPT ASSIGNTO CD LISTJOBS BYE RUN BG NEWLINE
 
 %union {
-	char *str;
+	char *string;
+	struct llist_t *llist;
 }
-%token <str> STRING
-%token <str> WORD
-%token <str> VARIABLE 
-%type <str> arg
+%token <string> STRING
+%token <string> WORD
+%token <string> VARIABLE 
+%type <string> arg
+%type <llist> arglist;
 %%
+program:
+	line
+	| program line
+	;
+line:
+	command NEWLINE
+	| error NEWLINE
 command:
 	defprompt
 	| cd
@@ -30,37 +41,43 @@ command:
 	; 
 defprompt:
 	DEFPROMPT arg {
-		printf("command<defprompt>(%s)\n", $2);
+		cmd_defprompt($2);
 	}
 	;
 
 cd:
 	CD arg {
-		printf("command<cd>(%s)\n", $2);
+		cmd_cd($2);
 	}
 	;
 
 assign:
 	VARIABLE EQ arg {
-		printf("set %s = %s\n", $1, $3);
+		cmd_assign($1, $3);
 	}
 	;
 
 listjobs:
 	LISTJOBS {
-		printf("command<listjobs>()\n");
+		cmd_listjobs();
 	}
 	;
 
 bye:
 	BYE {
-		printf("command<bye>()\n");
+		cmd_bye();
 	}
 	;
 
 arglist:
-	arg
-	| arglist arg
+	arg {
+		$$ = ll_new($1);
+	}
+	| arglist arg {
+		struct llist_t *prev = $1;
+		struct llist_t *nval = ll_new($2);
+		$$ = ll_append(prev, nval);
+	}
 	;
 arg:
 	WORD { $$ = $1; }
@@ -70,14 +87,14 @@ arg:
 
 run:
 	RUN WORD arglist {
-		printf("command<run>(%s, args)\n", $2);
+		cmd_run($2, $3, 0); // not sure yet how to handle arglist
 	}
 	| RUN WORD arglist BG {
-		printf("command<run>(%s, args, bg)\n", $2);
+		cmd_run($2, $3, 1);
 	}
 	;
 assignto: ASSIGNTO VARIABLE WORD arglist {
-		printf("assign %s to %s args", $2, $3);
+		cmd_assignto($2, $3, $4); // add arglist
 	}
 	;
 
@@ -85,7 +102,7 @@ assignto: ASSIGNTO VARIABLE WORD arglist {
 %%
 int yyerror(char *s)
 {
-	fprintf(stderr, "err %s\n", s);
+	fprintf(stderr, "%s\n", s);
 	return 1;
 }
 int main(int argc, char **argv) {
