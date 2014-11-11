@@ -2,36 +2,47 @@
 #include <string.h>
 #include <stdio.h>
 #include "llist.h"
+#include "shell_commands.h"
+
 #define SYS_BUFFERSIZE 1000
-/*
-	These will be wrappers around the system calls
-	So that we can be sure we don't screw up the calls
-	we should use the below vars to pass in args
-	to the system calls
-*/
-static char buf_varname[SYS_BUFFERSIZE];
-static char buf_vardef[SYS_BUFFERSIZE];
-static char buf_prevname[SYS_BUFFERSIZE];
-int SaveVariable(char *varname, char *vardef)
+
+// replace this later with environment variable call
+int ShowTokens = 1;
+
+void PrintToken(struct token_t *token, char *usage)
 {
-	return 0;
-}
-int GetVariable(char *varname)
-{
-	if (strcmp(varname, "ShowTokens") == 0) {
-		strncpy(buf_vardef, "1", SYS_BUFFERSIZE);
+	switch (token->ttype) {
+		
+		case STRING:
+			char *stype = "string";
+			break;
+		}
+		case VARIABLE:
+			char *stype = "variable";
+			break;
+		case WORD:
+			char *stype = "word";
+			break;
+		case EQ:
+		case COMMENT:
+			char *stype = "metachar";
+			break;
+		case DEFPROMPT:
+		case ASSIGNTO:
+		case CD:
+		case LISTJOBS:
+		case BYE:
+		case RUN:
+		case BG:
+			char *stype = "keyword";
+			break;
 	}
-	return 0;
 }
-int NextVariable(char *prevname)
-{
-	return 0;
-}
+
 void cmd_listjobs()
 {
-	GetVariable("ShowTokens");
-	if (strcmp("1", buf_vardef) == 0) {
-		printf("showing tokens\n");
+	if (ShowTokens) {
+		printf("Token Type = %s\tToken = %s\tUsage = %s\n", "keyword", "listjobs", "listjob");     
 	}
 	printf("listing currently running jobs\n");
 }
