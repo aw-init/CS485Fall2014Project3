@@ -15,18 +15,15 @@
 
 %union {
 	char *string;
+	struct token_t *token;
 	struct llist_t *llist;
 }
 %token <string> STRING
 %token <string> WORD
 %token <string> VARIABLE 
-%type <string> arg
-%type <llist> arglist;
+%type <token> arg
+%type <llist> arglist
 %%
-program:
-	line
-	| program line
-	;
 line:
 	command NEWLINE
 	| error NEWLINE
@@ -53,7 +50,8 @@ cd:
 
 assign:
 	VARIABLE EQ arg {
-		cmd_assign($1, $3);
+		struct token_t *var = tk_new(VARIABLE, $1);
+		cmd_assign(var, $3);
 	}
 	;
 
@@ -80,21 +78,26 @@ arglist:
 	}
 	;
 arg:
-	WORD { $$ = $1; }
-	| VARIABLE { $$ = $1; }
-	| STRING {$$ = $1; }
+	WORD { $$ = tk_new(WORD, $1); }
+	| VARIABLE { $$ = tk_new(VARIABLE, $1); }
+	| STRING {$$ = tk_new(STRING, $1); }
 	;
 
 run:
 	RUN WORD arglist {
-		cmd_run($2, $3, 0); // not sure yet how to handle arglist
+		struct token_t *cmd = tk_new(WORD, $2);
+		cmd_run(cmd, $3, 0); // not sure yet how to handle arglist
 	}
+
 	| RUN WORD arglist BG {
-		cmd_run($2, $3, 1);
+		struct token_t *cmd = tk_new(WORD, $2);
+		cmd_run(cmd, $3, 1);
 	}
 	;
 assignto: ASSIGNTO VARIABLE WORD arglist {
-		cmd_assignto($2, $3, $4); // add arglist
+		struct token_t *var = tk_new(VARIABLE, $2);
+		struct token_t *cmd = tk_new(WORD, $3);
+		cmd_assignto(var, cmd, $4); // add arglist
 	}
 	;
 
@@ -106,5 +109,8 @@ int yyerror(char *s)
 	return 1;
 }
 int main(int argc, char **argv) {
-	yyparse();
+	while (1) {
+		printf(">> ");
+		yyparse();
+	}
 }

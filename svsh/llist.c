@@ -1,7 +1,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include "llist.h"
-struct llist_t *ll_new(char *value)
+struct token_t *tk_new(int tt, char *val)
+{
+	struct token_t *tok = malloc(sizeof(struct token_t));
+	tok->value = val;
+	tok->ttype = tt;
+	return tok;
+}
+void tk_free(struct token_t *tok)
+{
+	free(tok->value);
+	free(tok);
+}
+struct llist_t *ll_new(struct token_t *value)
 {
 	struct llist_t *node = malloc(sizeof(struct llist_t));
 	node->value = value;
@@ -15,17 +27,17 @@ void ll_free(struct llist_t *head)
 	{
 		tmp = head;
 		head = head->next;
-		free(tmp->value);
+		tk_free(tmp->value);
 		free(tmp);
 	}
 }
-struct llist_t *ll_cons(char *value, struct llist_t *head) {
+struct llist_t *ll_cons(struct token_t *value, struct llist_t *head) {
 	struct llist_t *newnode = malloc(sizeof(struct llist_t));
 	newnode->value = value;
 	newnode->next = head;
 	return newnode;
 }
-char *ll_car(struct llist_t *head)
+struct token_t *ll_car(struct llist_t *head)
 {
 	return head->value;
 }
@@ -50,7 +62,7 @@ struct llist_t *ll_slice(struct llist_t *head, int index)
 		return NULL;
 	}
 }
-char *ll_nth(struct llist_t *head, int index)
+struct token_t *ll_nth(struct llist_t *head, int index)
 {
 	struct llist_t *tmp = ll_slice(head, index);
 	if (tmp == NULL) return NULL;
@@ -77,14 +89,14 @@ char *ll_tostring(struct llist_t *head)
 	int string_size = 0;
 	struct llist_t *iter = head;
 	ll_foreach(iter,
-		string_size += strlen(iter->value) + 2;
+		string_size += strlen(iter->value->value) + 2;
 	);
 	char *final_string = malloc(sizeof(char) * (string_size + 3));
 	strcat(final_string, "[");
 	
 	iter = head;
 	ll_foreach(iter,
-		strcat(final_string, iter->value);
+		strcat(final_string, iter->value->value);
 		if (iter->next != NULL) {
 			strcat(final_string, ", ");
 		}
