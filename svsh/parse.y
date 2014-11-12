@@ -24,9 +24,14 @@
 %type <token> arg
 %type <llist> arglist
 %%
+program:
+	line
+	| program line
+	;
 line:
-	command NEWLINE
-	| error NEWLINE
+	command NEWLINE { printf(">> "); }
+	| error NEWLINE { printf("error\n>> "); }
+	;
 command:
 	defprompt
 	| cd
@@ -109,8 +114,6 @@ int yyerror(char *s)
 	return 1;
 }
 int main(int argc, char **argv) {
-	while (1) {
-		printf(">> ");
-		yyparse();
-	}
+	printf(">> ");
+	yyparse();
 }
