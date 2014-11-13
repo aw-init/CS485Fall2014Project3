@@ -13,6 +13,7 @@ char vardefs[MAX_VAR_NUM][MAX_BUF_SIZE];
 char emptyStr[MAX_BUF_SIZE];
 char k_varname[MAX_BUF_SIZE];
 char k_vardef[MAX_BUF_SIZE];
+char k_searchName[MAX_BUF_SIZE];
 
 asmlinkage long sys_SaveVariable(char __user *varname, char __user *vardef){
 	int i = 0 ;
@@ -40,13 +41,18 @@ asmlinkage long sys_SaveVariable(char __user *varname, char __user *vardef){
         return(-1);
  	}
 
-	for(; i < MAX_VAR_NUM; ++i){
+ 	k_varname[varnameLen] = '\0';
+ 	k_vardef[vardefLen] = '\0';
+
+	for(; i < MAX_VAR_NUM; i++){
 		if(!strcmp(varnames[i],emptyStr) || !strcmp(varnames[i],k_varname)){
 			strcpy(varnames[i],k_varname);
-			varnames[i][varnameLen] = '\0';
+			strcpy(k_varname,emptyStr);
+			//varnames[i][varnameLen] = '\0';
 
 			strcpy(vardefs[i],k_vardef);
-			vardefs[i][vardefLen] = '\0';
+			strcpy(k_vardef,emptyStr);
+			//vardefs[i][vardefLen] = '\0';
 
 			printk(KERN_EMERG "The variable name is %s, and the variable def is %s",varnames[i],vardefs[i]);
 			printk(KERN_EMERG "SaveVariable() save success!");
@@ -77,9 +83,25 @@ asmlinkage long sys_GetVariable(char __user *varname, char __user *vardef, int _
 			printk(KERN_EMERG "The result is %d",bResult);
 		}
 	}
+
+	strcpy(k_searchName,emptyStr);
+	len = strlen(varname);
+
+	if ( (len < 1) || (len >  MAX_BUF_SIZE) ) {
+        printk(KERN_EMERG "GetVariable() varname failed: illegal len (%d)!", len);
+        return(-1);
+    }
+
+
+    if (copy_from_user(k_searchName, varname, len)) {
+        printk(KERN_EMERG "SaveVariable() failed: copy_from_user() error on varname");
+        return(-1);
+ 	}
+
+	k_searchName[len] = '\0';
 	i = 0;
 	for(; i < MAX_VAR_NUM ; i++){
-		if(strcmp(varname,varnames[i]) == 0){
+		if(strcmp(k_searchName,varnames[i]) == 0){
 			printk(KERN_EMERG "Found matching var\n");
 			
 			
@@ -95,8 +117,8 @@ asmlinkage long sys_GetVariable(char __user *varname, char __user *vardef, int _
 		 	}
 		 	printk(KERN_EMERG "Copied var to user, the vardef is %s", vardef);
 		 	
-		 	vardef[len] = '\0';
-		 	len = len+1;
+		 	//vardef[len] = '\0';
+		 	//len = len+1;
 		 	if(copy_to_user(deflen, &len, sizeof(int))) {
 		 		printk(KERN_EMERG "Failed to copy to user for the variable length");
 		 		return(-1);
@@ -115,8 +137,24 @@ asmlinkage long sys_NextVariable(char __user *prevname, char __user *varname, in
 
 	int i = 0;
 	int len;
+
+	strcpy(k_searchName,emptyStr);
+	len = strlen(prevname);
+
+	if ( (len < 1) || (len >  MAX_BUF_SIZE) ) {
+        printk(KERN_EMERG "GetVariable() varname failed: illegal len (%d)!", len);
+        return(-1);
+    }
+
+
+    if (copy_from_user(k_searchName, prevname, len)) {
+        printk(KERN_EMERG "SaveVariable() failed: copy_from_user() error on varname");
+        return(-1);
+ 	}
+	
+	k_searchName[len] = '\0';
 	for(; i < MAX_VAR_NUM ; i++){	
-		if(!strcmp(prevname,varnames[i])){
+		if(!strcmp(k_searchName,varnames[i])){
 			if(i +1 >= MAX_VAR_NUM){
 				printk(KERN_EMERG "NextVariable() failed reached end of list");
 				return(-1);
@@ -129,8 +167,8 @@ asmlinkage long sys_NextVariable(char __user *prevname, char __user *varname, in
 		        return(-1);
 		 	}
 		 	
-		 	vardef[len] = '\0';
-		 	len += 1;
+		 	//vardef[len] = '\0';
+		 	//len += 1;
 
 		 	if(copy_to_user(deflen, &len, sizeof(int))) {
 		 		printk(KERN_EMERG "Failed to copy to user for the variable length");
@@ -139,15 +177,15 @@ asmlinkage long sys_NextVariable(char __user *prevname, char __user *varname, in
 
 		 	//printk(KERN_EMERG "NextVariable() get next variable success!");
 
-		 	len = 0;
+		 	//len = 0;
 		 	len = strlen(varnames[i]);
 			if (copy_to_user(varname, varnames[i], len)) {
 		        printk(KERN_EMERG "NextVariable() failed: copy_to_user() error on varname");
 		        return(-1);
 		 	}
 		 	
-		 	varname[len] = '\0';
-		 	len += 1;
+		 	//varname[len] = '\0';
+		 	//len += 1;
 
 		 	if(copy_to_user(namelen, &len, sizeof(int))) {
 		 		printk(KERN_EMERG "Failed to copy to user for the variable length");
