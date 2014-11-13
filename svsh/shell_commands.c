@@ -48,14 +48,16 @@ void cmd_listjobs()
 	printf("listing currently running jobs\n");
 }
 
-void cmd_defprompt(struct token_t *nprompt)
+char* cmd_defprompt(struct token_t *nprompt)
 {
 	if (ShowTokens) {
 		PrintToken(DEFPROMPT, "defprompt", "defprompt");
 		PrintToken(nprompt->ttype, nprompt->value, "arg 1");
 	}
 	printf("set new prompt to %s\n", nprompt->value);
-	tk_free(nprompt);
+	char* prompt = nprompt->value;
+	//tk_free(nprompt);
+	return prompt;
 }
 void cmd_cd(struct token_t *path)
 {

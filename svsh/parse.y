@@ -9,10 +9,10 @@
 #include <stdio.h>
 #include "shell_commands.h"
 #include "llist.h"
+static char* prompt = "svsh";
 %}
 %define parse.error verbose
 %token EQ COMMENT DEFPROMPT ASSIGNTO CD LISTJOBS BYE RUN BG NEWLINE
-
 %union {
 	char *string;
 	struct token_t *token;
@@ -29,8 +29,8 @@ program:
 	| program line
 	;
 line:
-	command NEWLINE { printf(">> "); }
-	| error NEWLINE { printf("error\n>> "); }
+	command NEWLINE { printf("%s > ", prompt); }
+	| error NEWLINE { printf("error\n%s> ", prompt); }
 	;
 command:
 	defprompt
@@ -43,7 +43,8 @@ command:
 	; 
 defprompt:
 	DEFPROMPT arg {
-		cmd_defprompt($2);
+		//free(prompt);
+		prompt = cmd_defprompt($2);
 	}
 	;
 
@@ -114,6 +115,6 @@ int yyerror(char *s)
 	return 1;
 }
 int main(int argc, char **argv) {
-	printf(">> ");
+	printf("svsh > ");
 	yyparse();
 }
