@@ -82,6 +82,7 @@ void cmd_bye()
 	if (ShowTokens) {
 		PrintToken(BYE, "bye", "bye");
 	}
+	exit(0);
 	printf("bye!\n");
 }
 void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
