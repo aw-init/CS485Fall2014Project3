@@ -9,7 +9,8 @@
 
 // replace this later with environment variable call
 int ShowTokens = 1;
-
+extern variableList * varList;
+ 
 void PrintToken(int ttype, char *value, char *usage)
 {
 	char stype[9];
@@ -70,6 +71,36 @@ void cmd_cd(struct token_t *path)
 		perror("cd");
 	tk_free(path);
 }
+
+void add_var(char* name, char* value)
+{
+	variableList* currentVar = varList;
+	int found = 0;
+	//Check to see if the variable has already been created
+	while(currentVar != NULL && !found )
+	{
+		if(strcmp(currentVar->name, name) == 0)
+		{
+			strncpy(currentVar->value, value, sizeof(currentVar->value));
+			found = 1;
+		}
+	}	
+
+	if(!found){
+		//printf("Var not found! Adding to list now...\n");
+		variableList * addition = malloc(sizeof(variableList));
+		strncpy(addition->name, name, sizeof(addition->name));
+		strncpy(addition->value, value, sizeof(addition->value));
+		addition->prev = NULL;
+		addition->next = varList;
+		if(varList != NULL)
+			varList->prev = addition;
+		varList = addition;
+		
+	}
+	
+}
+
 void cmd_assign(struct token_t *varname, struct token_t *vardef)
 {
 	if (ShowTokens) {
@@ -78,6 +109,7 @@ void cmd_assign(struct token_t *varname, struct token_t *vardef)
 		PrintToken(vardef->ttype, vardef->value, "variable_def");
 	}
 	printf("set %s = %s\n", varname->value, vardef->value);
+	add_var(varname->value,vardef->value);
 	tk_free(varname);
 	tk_free(vardef);
 }
