@@ -66,6 +66,8 @@ void cmd_cd(struct token_t *path)
 		PrintToken(path->ttype, path->value, "arg 1");
 	}
 	printf("change directory to %s\n", path->value);
+	if(chdir(path->value)<0)
+		perror("cd");
 	tk_free(path);
 }
 void cmd_assign(struct token_t *varname, struct token_t *vardef)
@@ -85,6 +87,7 @@ void cmd_bye()
 		PrintToken(BYE, "bye", "bye");
 	}
 	printf("bye!\n");
+	exit(0);
 }
 void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 {
@@ -132,4 +135,21 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 	tk_free(varname);
 	tk_free(command);
 	ll_free(arglist);
+}
+
+void cmd_comment(struct llist_t *arglist)
+{
+	if(ShowTokens)
+	{
+		PrintToken(COMMENT, "#", "comment");
+	
+		int count = 0;
+		char argN[] = "arg 0000";
+		struct llist_t *iter = arglist;
+		ll_foreach(iter, {
+			count++;
+			sprintf(argN, "arg %4d",  count);
+			PrintToken(iter->value->ttype, iter->value->value, argN);
+		});
+	}
 }

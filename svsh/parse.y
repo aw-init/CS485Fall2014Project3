@@ -40,6 +40,7 @@ command:
 	| bye
 	| run
 	| assignto
+	| comment
 	; 
 defprompt:
 	DEFPROMPT arg {
@@ -107,6 +108,11 @@ assignto: ASSIGNTO VARIABLE WORD arglist {
 	}
 	;
 
+comment:	
+	COMMENT arglist{
+		cmd_comment($2);
+	}
+	;
 
 %%
 int yyerror(char *s)

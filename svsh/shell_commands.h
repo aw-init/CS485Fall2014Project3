@@ -8,4 +8,5 @@ void cmd_assign(struct token_t *varname, struct token_t *vardef);
 void cmd_bye();
 void cmd_run(struct token_t *command, struct llist_t *args, int bg);
 void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist_t *args);
+void cmd_comment(struct llist_t *args);
 #endif
