@@ -50,14 +50,32 @@ void cmd_listjobs()
 }
 
 char* cmd_defprompt(struct token_t *nprompt)
-{
+{	char* prompt;
 	if (ShowTokens) {
 		PrintToken(DEFPROMPT, "defprompt", "defprompt");
 		PrintToken(nprompt->ttype, nprompt->value, "arg 1");
 	}
-	printf("set new prompt to %s\n", nprompt->value);
-	char* prompt = nprompt->value;
+	if(nprompt->ttype == VARIABLE)
+	{
+		variableList* currentVar = varList;
+		
+		while(currentVar != NULL)
+		{
+			if(strcmp(nprompt->value,currentVar->name)==0)
+				prompt = currentVar->value;
+			else
+				currentVar = currentVar->next;
+				
+		}
+		if(currentVar == NULL)
+			prompt = "svsh";
+	}
+	else
+	{
+		prompt = nprompt->value;
+	}
 	//tk_free(nprompt);
+	printf("set new prompt to %s\n", prompt);
 	return prompt;
 }
 void cmd_cd(struct token_t *path)
@@ -75,6 +93,12 @@ void cmd_cd(struct token_t *path)
 void add_var(char* name, char* value)
 {
 	variableList* currentVar = varList;
+	if(strcmp("$ShowTokens",name)==0)
+	{
+		ShowTokens = atoi(value);
+		return;
+	}
+			
 	int found = 0;
 	//Check to see if the variable has already been created
 	while(currentVar != NULL && !found )
