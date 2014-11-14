@@ -49,31 +49,35 @@ void cmd_listjobs()
 	printf("listing currently running jobs\n");
 }
 
+/*Given a token_t, checks if it's a variable and then replaces the token values with the variable value*/
+char* var_value(struct token_t *var_token)
+{
+	if(var_token->ttype == VARIABLE)
+	{
+		variableList* currentVar = varList;
+		while(currentVar != NULL)
+		{
+			if(strcmp(var_token->value,currentVar->name)==0)
+				strncpy(var_token->value,currentVar->value,sizeof(var_token->value));
+			else
+				currentVar = currentVar->next;
+				
+		}
+	}
+
+}
+
 char* cmd_defprompt(struct token_t *nprompt)
 {	char* prompt;
 	if (ShowTokens) {
 		PrintToken(DEFPROMPT, "defprompt", "defprompt");
 		PrintToken(nprompt->ttype, nprompt->value, "arg 1");
 	}
-	if(nprompt->ttype == VARIABLE)
-	{
-		variableList* currentVar = varList;
-		
-		while(currentVar != NULL)
-		{
-			if(strcmp(nprompt->value,currentVar->name)==0)
-				prompt = currentVar->value;
-			else
-				currentVar = currentVar->next;
-				
-		}
-		if(currentVar == NULL)
-			prompt = "svsh";
-	}
-	else
-	{
-		prompt = nprompt->value;
-	}
+	printf("%s\n",nprompt->value);
+	var_value(nprompt);
+	printf("%s\n",nprompt->value);
+	prompt = nprompt->value;
+	
 	//tk_free(nprompt);
 	printf("set new prompt to %s\n", prompt);
 	return prompt;
@@ -108,6 +112,7 @@ void add_var(char* name, char* value)
 			strncpy(currentVar->value, value, sizeof(currentVar->value));
 			found = 1;
 		}
+		currentVar = currentVar->next;
 	}	
 
 	if(!found){

@@ -2,6 +2,7 @@
 #define sHELL_COMMANDS
 #include "llist.h"
 void cmd_listjobs();
+char* var_value(struct token_t *var_token);
 char* cmd_defprompt(struct token_t *nprompt);
 void cmd_cd(struct token_t *path);
 void add_var(char* name, char* value);

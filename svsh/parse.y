@@ -30,7 +30,7 @@ program:
 	;
 line:
 	command NEWLINE { printf("%s > ", prompt); }
-	| error NEWLINE { printf("error\n%s> ", prompt); }
+	| error NEWLINE { printf("error\n%s > ", prompt); }
 	;
 command:
 	defprompt
