@@ -36,7 +36,7 @@ command:
 	| bye
 	| run
 	| assignto
-	| comment
+	| comment 
 	; 
 defprompt:
 	DEFPROMPT WHITESPACE arg {
@@ -96,6 +96,13 @@ run:
 		struct token_t *cmd = tk_new(WORD, $3);
 		cmd_run(cmd, $5, 1);
 	}
+	| WORD WHITESPACE arglist WHITESPACE BG {
+		struct token_t *cmd = tk_new(WORD, $1);
+		cmd_run(cmd, $3, 1);
+	}
+	| WORD WHITESPACE arglist{
+		struct token_t *cmd = tk_new(WORD, $1);
+		cmd_run(cmd, $3, 0);
 	;
 assignto: ASSIGNTO WHITESPACE VARIABLE WHITESPACE WORD WHITESPACE arglist {
 		struct token_t *var = tk_new(VARIABLE, $3);
