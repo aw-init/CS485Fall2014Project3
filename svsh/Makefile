@@ -14,4 +14,4 @@ environvar.o: environvar.h environvar.c
 	gcc -c environvar.c -o environvar.o
 
 clean:
-	rm -f lex.yy.c lex.yy.o y.tab.c y.tab.h y.tab.o a.out $(MODULES) svsh.out
+	rm -f lex.yy.c lex.yy.o y.tab.c y.tab.h y.tab.o  $(MODULES) svsh.out

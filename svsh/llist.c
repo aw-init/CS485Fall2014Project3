@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "llist.h"
-
-
 struct token_t *tk_new(int tt, char *val)
 {
 	struct token_t *tok = malloc(sizeof(struct token_t));
@@ -69,6 +67,17 @@ struct token_t *ll_nth(struct llist_t *head, int index)
 	struct llist_t *tmp = ll_slice(head, index);
 	if (tmp == NULL) return NULL;
 	else return tmp->value;
+}
+
+
+int ll_length(struct llist_t *head)
+{
+	int i = 1;
+	while (head->next != NULL) {
+		head = head->next;
+		i++;
+	}
+	return i;
 }
 
 struct llist_t *ll_last_node(struct llist_t *head)
