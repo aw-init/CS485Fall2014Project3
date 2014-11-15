@@ -155,6 +155,7 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 {
 	if (ShowTokens) {
 		PrintToken(RUN, "run", "run");
+		PrintToken(command->ttype, command->value, "cmd");
 		int count = 0;
 		char argN[] = "arg 0000";
 		struct llist_t *iter = arglist;

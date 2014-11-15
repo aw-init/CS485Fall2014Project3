@@ -33,6 +33,10 @@ bye { return BYE;  }
 
 assignto { return ASSIGNTO;  }
 
+[ \t]+ {
+	return WHITESPACE;
+}
+
 \".+\" {
 	yylval.string = strdup(yytext);
 	return STRING;
@@ -43,7 +47,7 @@ assignto { return ASSIGNTO;  }
 	return VARIABLE;
 }
 
-[^ \n\t=\#]+ {
+[^ \$\n\t=\#]+ {
 	yylval.string = strdup(yytext);
 	return WORD;
 }
