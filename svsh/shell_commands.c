@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <errno.h>
 #include "llist.h"
 #include "y.tab.h"
 #include "shell_commands.h"
@@ -151,26 +154,64 @@ void cmd_bye()
 	printf("bye!\n");
 	exit(0);
 }
+
+int proc_running(int pid)
+{
+	kill(pid, 0);
+	return errno != ESRCH;	
+}
+
 void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 {
+
+	struct llist_t *iter = arglist;
 	if (ShowTokens) {
 		PrintToken(RUN, "run", "run");
 		PrintToken(command->ttype, command->value, "cmd");
 		int count = 0;
 		char argN[] = "arg 0000";
-		struct llist_t *iter = arglist;
 		ll_foreach(iter, {
 			count++;
 			sprintf(argN, "arg %4d",  count);
 			PrintToken(iter->value->ttype, iter->value->value, argN);
 		});
+		PrintToken(BG, "<bg>" "background");
 	}
-	char *argstr = ll_tostring(arglist);
 	if (bg) {
-		printf("running %s in background with args %s\n", command->value, argstr);
+		pid_t pid = fork();
+		if (pid == 0) {
+			int len = ll_length(arglist);
+			char **nargv = malloc(sizeof(char*) * len);
+			struct llist_t *iter = arglist;
+			int i = 0;
+			ll_foreach(iter, {
+				int slen = strlen(iter->value->value);
+				nargv[i] = malloc(sizeof(char) * (slen+1));
+				strcpy(nargv[i], iter->value->value);
+			});
+			execv(command->value, nargv);		
+		}
 	}
 	else {
-		printf("running %s with args %s\n", command->value, argstr);
+		pid_t pid = fork();
+		if (pid == 0) {
+			int len = ll_length(arglist);
+			char **nargv = malloc(sizeof(char*) * len);
+			struct llist_t *iter = arglist;
+			int i = 0;
+			ll_foreach(iter, {
+				int slen = strlen(iter->value->value);
+				nargv[i] = malloc(sizeof(char) * (slen+1));
+				strcpy(nargv[i], iter->value->value);
+			});
+			execv(command->value, nargv);	
+		}
+		else {
+			int errormsg = 0;
+			pid_t child = wait(&errormsg);
+			// child is terminated here
+			// listjobs stuff goes here
+		}
 	}
 	free(argstr);
 	tk_free(command);

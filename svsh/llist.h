@@ -1,15 +1,5 @@
 #ifndef lLIST_H
 #define lLIST_H
-
-#define MAX_INPUT 256
-
-typedef struct variable_list {
-	struct variable_list* next;
-	struct variable_list* prev;
-	char name[MAX_INPUT];
-	char value[MAX_INPUT];
-}variableList;
-
 struct token_t {
 	char *value;
 	int ttype;
@@ -44,6 +34,9 @@ struct llist_t *ll_slice(struct llist_t *head, int n);
 
 //  get the value at index
 struct token_t *ll_nth(struct llist_t *head, int index);
+
+// get the length of the list
+int ll_length(struct llist_t *head);
 
 // get the single element list at the end of the list
 struct llist_t *ll_last_node(struct llist_t *head);
