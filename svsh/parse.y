@@ -103,6 +103,7 @@ run:
 	| WORD WHITESPACE arglist{
 		struct token_t *cmd = tk_new(WORD, $1);
 		cmd_run(cmd, $3, 0);
+	}
 	;
 assignto: ASSIGNTO WHITESPACE VARIABLE WHITESPACE WORD WHITESPACE arglist {
 		struct token_t *var = tk_new(VARIABLE, $3);

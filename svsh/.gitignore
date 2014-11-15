@@ -1,0 +1,7 @@
+lexx.yy.c
+lexx.yy.o
+llist.o
+shell_commands.o
+shvsh.out
+y.tab.h
+y.tab.c
