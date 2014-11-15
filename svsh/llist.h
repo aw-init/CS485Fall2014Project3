@@ -1,5 +1,15 @@
 #ifndef lLIST_H
 #define lLIST_H
+
+#define MAX_INPUT 256
+
+typedef struct variable_list {
+	struct variable_list* next;
+	struct variable_list* prev;
+	char name[MAX_INPUT];
+	char value[MAX_INPUT];
+}variableList;
+
 struct token_t {
 	char *value;
 	int ttype;
