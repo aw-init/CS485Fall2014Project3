@@ -120,6 +120,11 @@ assignto: ASSIGNTO WHITESPACE VARIABLE WHITESPACE WORD WHITESPACE arglist {
 		struct token_t *cmd = tk_new(WORD, $5);
 		cmd_assignto(var, cmd, $7); // add arglist
 	}
+	| ASSIGNTO WHITESPACE VARIABLE WHITESPACE WORD {
+		struct token_t *var = tk_new(VARIABLE, $3);
+		struct token_t *cmd = tk_new(WORD, $5);
+		cmd_assignto(var, cmd, NULL); // add arglist
+	}
 	;
 
 comment:	

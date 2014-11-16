@@ -6,8 +6,10 @@
 #include <errno.h>
 #include "llist.h"
 #include "y.tab.h"
+#include <unistd.h>
 #include "shell_commands.h"
-
+#include <sys/stat.h>
+#include <fcntl.h>
 #define SYS_BUFFERSIZE 1000
 #define SYS_SAVE_VAR 315
 #define SYS_GET_VAR 316
@@ -262,15 +264,71 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 		int count = 0;
 		char argN[] = "arg 0000";
 		struct llist_t *iter = arglist;
-		ll_foreach(iter, {
-			count++;
-			sprintf(argN, "arg %4d",  count);
-			PrintToken(iter->value->ttype, iter->value->value, argN);
-		});
+	
+		if(iter != NULL)
+			ll_foreach(iter, {
+				count++;
+				sprintf(argN, "arg %4d",  count);
+				PrintToken(iter->value->ttype, iter->value->value, argN);
+			});
 	}
-	char *argstr = ll_tostring(arglist);
-	printf("assigning the result of {%s %s} to %s", command->value, argstr, varname->value);
-	free(argstr);
+	
+//	char *argstr = ll_tostring(arglist);
+//	printf("assigning the result of {%s %s} to %s", command->value, argstr, varname->value);
+	
+	
+	int saved_stdout = dup(1);
+	pid_t pid = fork();
+	if (pid == 0) {
+		int fd = open(".TEMP.txt", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+		dup2(fd, 1);
+		dup2(fd, 2);
+		close(fd);
+		if(arglist == NULL){
+			char *nargv[2]={command->value,NULL};
+			execv(command->value,nargv);
+		}
+		else{
+			int len = ll_length(arglist);
+			char **nargv = malloc(sizeof(char*) * (len+2));
+			struct llist_t *iter = arglist;
+			nargv[0] = malloc(sizeof(char) * (strlen(command->value)+1));
+			strncpy(nargv[0],command->value, sizeof(nargv[0]));
+			int i = 1;
+			if(iter != NULL)
+				ll_foreach(iter, {
+					int slen = strlen(iter->value->value);
+					nargv[i] = malloc(sizeof(char) * (slen+1));
+					strcpy(nargv[i], iter->value->value);
+				//	printf("nargv %d: %s\n",i,iter->value->value);
+				});
+			nargv[len] = NULL;
+			execv(command->value, nargv);	
+			//printf("%d\n", errno);
+		}
+	}
+	else {
+		int errormsg = 0;
+		pid_t child = wait(&errormsg);
+		// child is terminated here
+		// listjobs stuff goes here
+	}
+	dup2(saved_stdout, 1);
+	close(saved_stdout);
+	FILE *f = fopen(".TEMP.txt", "rb");
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	char *tempstring = malloc(fsize + 1);
+	fread(tempstring, fsize, 1, f);
+	fclose(f);
+
+	tempstring[fsize] = 0;
+	
+	syscall(SYS_SAVE_VAR, varname->value, tempstring);
+	
+	//	free(argstr);
 	tk_free(varname);
 	tk_free(command);
 	ll_free(arglist);
