@@ -12,7 +12,7 @@
 
 // replace this later with environment variable call
 int ShowTokens = 1;
-extern variableList * varList;
+//extern variableList * varList;
  
 void PrintToken(int ttype, char *value, char *usage)
 {
@@ -57,6 +57,10 @@ char* var_value(struct token_t *var_token)
 {
 	if(var_token->ttype == VARIABLE)
 	{
+		char var_definition[SYS_BUFFERSIZE];
+		syscall(316, var_token->value, var_definition, SYS_BUFFERSIZE);
+		strncpy(var_token->value,var_definition, sizeof(var_token->value));
+		/*
 		variableList* currentVar = varList;
 		while(currentVar != NULL)
 		{
@@ -66,6 +70,7 @@ char* var_value(struct token_t *var_token)
 				currentVar = currentVar->next;
 				
 		}
+		*/
 	}
 
 }
@@ -98,7 +103,9 @@ void cmd_cd(struct token_t *path)
 }
 
 void add_var(char* name, char* value)
-{
+{	
+	syscall(315, name, value);
+	/*
 	variableList* currentVar = varList;
 	if(strcmp("$ShowTokens",name)==0)
 	{
@@ -130,6 +137,7 @@ void add_var(char* name, char* value)
 		varList = addition;
 		
 	}
+	*/
 	
 }
 
@@ -175,7 +183,7 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 			sprintf(argN, "arg %4d",  count);
 			PrintToken(iter->value->ttype, iter->value->value, argN);
 		});
-		PrintToken(BG, "<bg>" "background");
+		PrintToken(BG, "<bg>", "background");
 	}
 	if (bg) {
 		pid_t pid = fork();
@@ -213,7 +221,7 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 			// listjobs stuff goes here
 		}
 	}
-	free(argstr);
+	//free(argstr);
 	tk_free(command);
 	ll_free(arglist);
 }
