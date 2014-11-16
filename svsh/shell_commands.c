@@ -54,7 +54,7 @@ void cmd_listjobs()
 }
 
 /*Given a token_t, checks if it's a variable and then replaces the token values with the variable value*/
-char* var_value(struct token_t *var_token)
+void var_value(struct token_t *var_token)
 {
 	if(var_token->ttype == VARIABLE)
 	{
@@ -178,12 +178,14 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 		PrintToken(command->ttype, command->value, "cmd");
 		int count = 0;
 		char argN[] = "arg 0000";
-		ll_foreach(iter, {
-			count++;
-			sprintf(argN, "arg %4d",  count);
-			PrintToken(iter->value->ttype, iter->value->value, argN);
-		});
-		PrintToken(BG, "<bg>", "background");
+		if(iter != NULL)
+			ll_foreach(iter, {
+				count++;
+				sprintf(argN, "arg %4d",  count);
+				PrintToken(iter->value->ttype, iter->value->value, argN);
+			});
+		if(bg)
+			PrintToken(BG, "<bg>", "background");
 	}
 	if (bg) {
 		pid_t pid = fork();
@@ -192,12 +194,18 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 			char **nargv = malloc(sizeof(char*) * len);
 			struct llist_t *iter = arglist;
 			int i = 0;
-			ll_foreach(iter, {
-				int slen = strlen(iter->value->value);
-				nargv[i] = malloc(sizeof(char) * (slen+1));
-				strcpy(nargv[i], iter->value->value);
-			});
-			execv(command->value, nargv);		
+			if(iter != NULL){
+				ll_foreach(iter, {
+					int slen = strlen(iter->value->value);
+					nargv[i] = malloc(sizeof(char) * (slen+1));
+					strcpy(nargv[i], iter->value->value);
+				});
+				execv(command->value, nargv);
+			}
+			else{
+				execv(command->value, NULL);
+				
+			}		
 		}
 	}
 	else {
@@ -207,12 +215,18 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 			char **nargv = malloc(sizeof(char*) * len);
 			struct llist_t *iter = arglist;
 			int i = 0;
-			ll_foreach(iter, {
-				int slen = strlen(iter->value->value);
-				nargv[i] = malloc(sizeof(char) * (slen+1));
-				strcpy(nargv[i], iter->value->value);
-			});
-			execv(command->value, nargv);	
+			if(iter != NULL){
+				ll_foreach(iter, {
+					int slen = strlen(iter->value->value);
+					nargv[i] = malloc(sizeof(char) * (slen+1));
+					strcpy(nargv[i], iter->value->value);
+				});
+				execv(command->value, nargv);	
+			}
+			else{
+				execv(command->value, NULL);
+				
+			}		
 		}
 		else {
 			int errormsg = 0;

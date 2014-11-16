@@ -96,6 +96,14 @@ run:
 		struct token_t *cmd = tk_new(WORD, $3);
 		cmd_run(cmd, $5, 1);
 	}
+	| RUN WHITESPACE WORD{
+		struct token_t *cmd = tk_new(WORD, $3);
+		cmd_run(cmd, NULL, 0);
+	}
+	| RUN WHITESPACE WORD WHITESPACE BG{
+		struct token_t *cmd = tk_new(WORD, $3);
+		cmd_run(cmd, NULL, 1);
+	}
 	| WORD WHITESPACE arglist WHITESPACE BG {
 		struct token_t *cmd = tk_new(WORD, $1);
 		cmd_run(cmd, $3, 1);
