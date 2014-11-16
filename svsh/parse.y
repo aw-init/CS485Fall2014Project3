@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include "shell_commands.h"
 #include "llist.h"
+#define SYS_SAVE_VAR 315
+#define SYS_GET_VAR 316
 static char* prompt = "svsh";
 %}
 %define parse.error verbose
@@ -133,6 +135,11 @@ int yyerror(char *s)
 	return 1;
 }
 int main(int argc, char **argv) {
+	atexit(cmd_bye);
+	syscall(SYS_SAVE_VAR, "$PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games");
+//	char var_definition[1000];
+//	syscall(SYS_GET_VAR, "$PATH", var_definition, 1000);
+//	printf("%s\n",var_definition);	
 	printf("svsh > ");
 	yyparse();
 }

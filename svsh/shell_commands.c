@@ -108,9 +108,11 @@ void add_var(char* name, char* value)
 	if(strcmp("$ShowTokens",name)==0)
 	{
 		ShowTokens = atoi(value);
-		return;
+		
 	}
-	syscall(SYS_SAVE_VAR, name, value);
+	else{
+		syscall(SYS_SAVE_VAR, name, value);
+	}
 	/*
 			
 	int found = 0;
@@ -158,7 +160,6 @@ void cmd_bye()
 	if (ShowTokens) {
 		PrintToken(BYE, "bye", "bye");
 	}
-	exit(0);
 	printf("bye!\n");
 	exit(0);
 }
@@ -171,7 +172,7 @@ int proc_running(int pid)
 
 void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 {
-
+	printf("Inside run\n");
 	struct llist_t *iter = arglist;
 	if (ShowTokens) {
 		PrintToken(RUN, "run", "run");
@@ -190,43 +191,55 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 	if (bg) {
 		pid_t pid = fork();
 		if (pid == 0) {
-			int len = ll_length(arglist);
-			char **nargv = malloc(sizeof(char*) * len);
-			struct llist_t *iter = arglist;
-			int i = 0;
-			if(iter != NULL){
+			printf("Inside bg fork\n");
+			if(arglist == NULL){
+				char *nargv[2]={command->value,NULL};
+				execv(command->value,nargv);
+			}
+			else{
+				int len = ll_length(arglist);
+				char **nargv = malloc(sizeof(char*) * (len + 2));
+				nargv[0] = malloc(sizeof(char) * (strlen(command->value)+1));
+				strncpy(nargv[0],command->value, sizeof(nargv[0]));
+				struct llist_t *iter = arglist;
+				int i = 0;
 				ll_foreach(iter, {
 					int slen = strlen(iter->value->value);
 					nargv[i] = malloc(sizeof(char) * (slen+1));
 					strcpy(nargv[i], iter->value->value);
 				});
+				nargv[len] = NULL;
 				execv(command->value, nargv);
 			}
-			else{
-				execv(command->value, NULL);
 				
-			}		
 		}
 	}
 	else {
 		pid_t pid = fork();
 		if (pid == 0) {
-			int len = ll_length(arglist);
-			char **nargv = malloc(sizeof(char*) * len);
-			struct llist_t *iter = arglist;
-			int i = 0;
-			if(iter != NULL){
-				ll_foreach(iter, {
-					int slen = strlen(iter->value->value);
-					nargv[i] = malloc(sizeof(char) * (slen+1));
-					strcpy(nargv[i], iter->value->value);
-				});
-				execv(command->value, nargv);	
+			printf("Inside non-bg fork\n");
+			if(arglist == NULL){
+				char *nargv[2]={command->value,NULL};
+				execv(command->value,nargv);
 			}
 			else{
-				execv(command->value, NULL);
-				
-			}		
+				int len = ll_length(arglist);
+				char **nargv = malloc(sizeof(char*) * (len+2));
+				struct llist_t *iter = arglist;
+				nargv[0] = malloc(sizeof(char) * (strlen(command->value)+1));
+				strncpy(nargv[0],command->value, sizeof(nargv[0]));
+				int i = 1;
+				if(iter != NULL)
+					ll_foreach(iter, {
+						int slen = strlen(iter->value->value);
+						nargv[i] = malloc(sizeof(char) * (slen+1));
+						strcpy(nargv[i], iter->value->value);
+						printf("nargv %d: %s\n",i,iter->value->value);
+					});
+				nargv[len] = NULL;
+				execv(command->value, nargv);	
+				printf("%d\n", errno);
+			}
 		}
 		else {
 			int errormsg = 0;
