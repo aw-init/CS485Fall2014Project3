@@ -9,7 +9,8 @@
 #include "shell_commands.h"
 
 #define SYS_BUFFERSIZE 1000
-
+#define SYS_SAVE_VAR 315
+#define SYS_GET_VAR 316
 // replace this later with environment variable call
 int ShowTokens = 1;
 //extern variableList * varList;
@@ -58,7 +59,7 @@ char* var_value(struct token_t *var_token)
 	if(var_token->ttype == VARIABLE)
 	{
 		char var_definition[SYS_BUFFERSIZE];
-		syscall(316, var_token->value, var_definition, SYS_BUFFERSIZE);
+		syscall(SYS_GET_VAR, var_token->value, var_definition, SYS_BUFFERSIZE);
 		strncpy(var_token->value,var_definition, sizeof(var_token->value));
 		/*
 		variableList* currentVar = varList;
@@ -104,14 +105,13 @@ void cmd_cd(struct token_t *path)
 
 void add_var(char* name, char* value)
 {	
-	syscall(315, name, value);
-	/*
-	variableList* currentVar = varList;
 	if(strcmp("$ShowTokens",name)==0)
 	{
 		ShowTokens = atoi(value);
 		return;
 	}
+	syscall(SYS_SAVE_VAR, name, value);
+	/*
 			
 	int found = 0;
 	//Check to see if the variable has already been created
