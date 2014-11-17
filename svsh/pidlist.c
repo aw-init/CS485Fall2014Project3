@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "pidlist.h"
-struct pidlist_t *pl_new(int value)
+struct pidlist_t *pl_new(pid_t value)
 {
 	struct pidlist_t *node = malloc(sizeof(struct pidlist_t));
 	node->pid = value;
@@ -18,11 +19,16 @@ void pl_free(struct pidlist_t *head)
 		free(tmp);
 	}
 }
-struct pidlist_t *pl_cons(int value, struct pidlist_t *head) {
-	struct pidlist_t *newnode = malloc(sizeof(struct pidlist_t));
-	newnode->pid = value;
-	newnode->next = head;
-	return newnode;
+struct pidlist_t *pl_cons(pid_t value, struct pidlist_t *head) {
+	if (head != NULL) {
+		struct pidlist_t *newnode = malloc(sizeof(struct pidlist_t));
+		newnode->pid = value;
+		newnode->next = head;
+		return newnode;
+	}
+	else {
+		return pl_new(value);
+	}
 }
 
 // remove an element from the pid list.
@@ -65,7 +71,7 @@ struct pidlist_t *pl_remove(struct pidlist_t *head, int index) {
 	}
 	
 }
-int pl_car(struct pidlist_t *head)
+pid_t pl_car(struct pidlist_t *head)
 {
 	return head->pid;
 }
@@ -90,7 +96,7 @@ struct pidlist_t *pl_slice(struct pidlist_t *head, int index)
 		return NULL;
 	}
 }
-int pl_nth(struct pidlist_t *head, int index)
+pid_t pl_nth(struct pidlist_t *head, int index)
 {
 	struct pidlist_t *tmp = pl_slice(head, index);
 	if (tmp == NULL) return 0;

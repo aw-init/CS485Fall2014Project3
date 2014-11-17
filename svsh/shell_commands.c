@@ -13,8 +13,15 @@
 #define SYS_BUFFERSIZE 1000
 #define SYS_SAVE_VAR 315
 #define SYS_GET_VAR 316
+
 // replace this later with environment variable call
 int ShowTokens = 1;
+struct pidlist_t {
+	pid_t pid;
+	char *name;
+	struct pidlist_t *next;	
+};
+struct pidlist_t *bg_procs = NULL;
 //extern variableList * varList;
  
 void PrintToken(int ttype, char *value, char *usage)
@@ -46,13 +53,51 @@ void PrintToken(int ttype, char *value, char *usage)
 	}
 	printf("Token Type = %s\tToken = %s\tUsage = %s\n", stype, value, usage);
 }
-
+int proc_running(pid_t pid) {
+	int status;
+	pid_t result = waitpid(pid, &status, WNOHANG);
+	if (result == 0) {
+		// child still doing useful work
+		return 1;
+	}
+	else if (result == -1) {
+		// error case
+		return 0;
+	}
+	else {
+		// child is no longer running
+		return 0;
+	}
+}
 void cmd_listjobs()
 {
 	if (ShowTokens) {
 		PrintToken(LISTJOBS, "listjobs", "listjobs");
 	}
 	printf("listing currently running jobs\n");
+	struct pidlist_t *iter = bg_procs;
+	struct pidlist_t *tmp;
+	struct pidlist_t *prev = NULL;
+	int length = 0;
+	while (iter != NULL) {
+		if (proc_running(iter->pid)) {
+			printf("%d\n", iter->pid);
+			length++;
+			prev = iter;
+			tmp = iter->next;
+		}
+		else {
+			prev = prev;
+			tmp = iter->next;
+			free(iter->name);
+			free(iter);
+			prev->next = tmp;
+		}
+		// iter is no longer trustworthy
+		iter = tmp;
+		
+	}
+	printf("there are currently %d proccesses running\n", length);
 }
 
 /*Given a token_t, checks if it's a variable and then replaces the token values with the variable value*/
@@ -166,12 +211,6 @@ void cmd_bye()
 	exit(0);
 }
 
-int proc_running(int pid)
-{
-	kill(pid, 0);
-	return errno != ESRCH;	
-}
-
 void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 {
 	printf("Inside run\n");
@@ -193,12 +232,17 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 	if (bg) {
 		pid_t pid = fork();
 		if (pid == 0) {
+			// child is running here
 			printf("Inside bg fork\n");
 			if(arglist == NULL){
+				// construct arglist without arguments
 				char *nargv[2]={command->value,NULL};
+				
+				//make system call
 				execv(command->value,nargv);
 			}
 			else{
+				// construct arglist with arguments
 				int len = ll_length(arglist);
 				char **nargv = malloc(sizeof(char*) * (len + 2));
 				nargv[0] = malloc(sizeof(char) * (strlen(command->value)+1));
@@ -211,9 +255,24 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 					strcpy(nargv[i], iter->value->value);
 				});
 				nargv[len] = NULL;
+
+				// make system call
 				execv(command->value, nargv);
 			}
 				
+		}
+		else {
+			// parent is running
+			char *cmd_cpy = strdup(command->value);
+			struct pidlist_t *pidnode = malloc(sizeof(struct pidlist_t));
+			printf("%p\n", pidnode);
+			pidnode->pid = pid;
+			pidnode->name = cmd_cpy;
+			pidnode->next = NULL;
+			if (bg_procs != NULL)
+				pidnode->next = bg_procs;
+			}
+			bg_procs = pidnode;
 		}
 	}
 	else {

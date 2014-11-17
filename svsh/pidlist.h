@@ -1,22 +1,23 @@
-#ifndef lLIST_H
-#define lLIST_H
+#ifndef pLIST_H
+#define pLIST_H
+#include <unistd.h>
 struct pidlist_t {
-	int pid; 
+	pid_t pid; 
 	struct pidlist_t *next;
 };
 
 // create a new one-element list
-struct pidlist_t* pl_new(int value);
+struct pidlist_t* pl_new(pid_t value);
 
 // free the memory owned by the list
 // this assumes all strings are malloc'd and not owned by anything else
 void pl_free(struct pidlist_t* head);
 
 // prepend a list with a new value
-struct pidlist_t *pl_cons(int value, struct pidlist_t *head);
+struct pidlist_t *pl_cons(pid_t value, struct pidlist_t *head);
 
 // get the first value in the list
-int pl_car(struct pidlist_t *head);
+pid_t pl_car(struct pidlist_t *head);
 
 // get the rest of the list
 struct pidlist_t *pl_cdr(struct pidlist_t *head);
@@ -25,7 +26,7 @@ struct pidlist_t *pl_cdr(struct pidlist_t *head);
 struct pidlist_t *pl_slice(struct pidlist_t *head, int n);
 
 //  get the value at index
-int pl_nth(struct pidlist_t *head, int index);
+pid_t pl_nth(struct pidlist_t *head, int index);
 
 // get the length of the list
 int pl_length(struct pidlist_t *head);

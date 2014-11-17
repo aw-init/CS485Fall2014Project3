@@ -8,6 +8,11 @@ llist.o: llist.h llist.c
 	gcc -c llist.c -g -o llist.o
 pidlist.o: pidlist.h pidlist.c
 	gcc -c pidlist.c -g -o pidlist.o	
+
+noop: noop.c
+	gcc noop.c -o noop
+loop: loop.c
+	gcc loop.c -o loop
 	
 lex.yy.c: scan.l y.tab.h
 	flex scan.l
