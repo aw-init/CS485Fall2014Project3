@@ -173,7 +173,7 @@ void cmd_bye()
 		PrintToken(BYE, "bye", "bye");
 	}
 	printf("bye!\n");
-	exit(0);
+	exit(1);
 }
 
 void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
@@ -216,7 +216,7 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 				char *nargv[2]={command->value,NULL};
 				
 				//make system call
-				execv(command->value,nargv);
+				execvp(nargv[0],nargv);
 			}
 			else{
 				// construct arglist with arguments
@@ -234,7 +234,7 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 				nargv[len] = NULL;
 
 				// make system call
-				execv(command->value, nargv);
+				execvp(nargv[0], nargv);
 			}
 				
 		}
@@ -256,7 +256,7 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 			
 			if(arglist == NULL){
 				char *nargv[2]={command->value,NULL};
-				execv(command->value,nargv);
+				execvp(nargv[0],nargv);
 			}
 			else{
 				int len = ll_length(arglist);
@@ -273,7 +273,7 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 						printf("nargv %d: %s\n",i,iter->value->value);
 					});
 				nargv[len] = NULL;
-				execv(command->value, nargv);	
+				execvp(nargv[0], nargv);	
 			
 			}
 			if(errno != 1)
