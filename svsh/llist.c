@@ -72,6 +72,7 @@ struct token_t *ll_nth(struct llist_t *head, int index)
 
 int ll_length(struct llist_t *head)
 {
+	if (head == NULL) return 0;
 	int i = 1;
 	while (head->next != NULL) {
 		head = head->next;
