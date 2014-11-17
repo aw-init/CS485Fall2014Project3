@@ -75,28 +75,29 @@ void cmd_listjobs()
 		PrintToken(LISTJOBS, "listjobs", "listjobs");
 	}
 	printf("listing currently running jobs\n");
+	struct pidlist_t *newlist = NULL;
 	struct pidlist_t *iter = bg_procs;
-	struct pidlist_t *tmp;
-	struct pidlist_t *prev = NULL;
+	struct pidlist_t *tmp = NULL;
 	int length = 0;
 	while (iter != NULL) {
 		if (proc_running(iter->pid)) {
-			printf("%d\n", iter->pid);
+			printf("%d %s\n", iter->pid, iter->name);
 			length++;
-			prev = iter;
-			tmp = iter->next;
+			struct pidlist_t *node = malloc(sizeof(struct pidlist_t));
+			node->pid = iter->pid;
+			node->name = iter->name;
+			node->next = newlist;
+			newlist = node;
 		}
-		else {
-			prev = prev;
-			tmp = iter->next;
-			free(iter->name);
-			free(iter);
-			prev->next = tmp;
-		}
-		// iter is no longer trustworthy
-		iter = tmp;
-		
+		iter = iter->next;
 	}
+	iter = bg_procs;
+	while (iter != NULL) {
+		tmp = iter->next;
+		free(iter);
+		iter = tmp;
+	}
+	bg_procs = newlist;
 	printf("there are currently %d proccesses running\n", length);
 }
 
@@ -213,7 +214,11 @@ void cmd_bye()
 
 void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 {
-	printf("Inside run\n");
+	/*
+		We still need to add some error checking to exec
+		It currently fails silently if it gives an invalid path
+		same thing for assignto
+	*/
 	struct llist_t *iter = arglist;
 	if (ShowTokens) {
 		PrintToken(RUN, "run", "run");
@@ -263,16 +268,14 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 		}
 		else {
 			// parent is running
+			
 			char *cmd_cpy = strdup(command->value);
 			struct pidlist_t *pidnode = malloc(sizeof(struct pidlist_t));
-			printf("%p\n", pidnode);
 			pidnode->pid = pid;
 			pidnode->name = cmd_cpy;
-			pidnode->next = NULL;
-			if (bg_procs != NULL)
-				pidnode->next = bg_procs;
-			}
+			pidnode->next = bg_procs;
 			bg_procs = pidnode;
+			
 		}
 	}
 	else {
