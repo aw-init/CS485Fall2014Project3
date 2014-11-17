@@ -142,14 +142,19 @@ void cmd_cd(struct token_t *path)
 }
 
 void add_var(char* name, char* value)
-{	
+{
+	char newvalue[SYS_BUFFERSIZE];
+	char newname[SYS_BUFFERSIZE];
+	strncpy(newname,name,strlen(name));
+	strncpy(newvalue,value,strlen(value));
+
 	if(strcmp("$ShowTokens",name)==0)
 	{
 		ShowTokens = atoi(value);
 		
 	}
 	else{
-		syscall(SYS_SAVE_VAR, name, value);
+		syscall(SYS_SAVE_VAR, newname, newvalue);
 	}
 	
 	
@@ -312,6 +317,20 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 		int retval = execvp(nargv[0],nargv);	
 		if(retval == -1)
 			printf("%s\n", strerror(errno));
+		dup2(saved_stdout, 1);
+		close(saved_stdout);
+		FILE *f = fopen(".TEMP.txt", "rb");
+		fseek(f, 0, SEEK_END);
+		long fsize = ftell(f);
+		fseek(f, 0, SEEK_SET);
+
+		char *tempstring = malloc(fsize + 1);
+		fread(tempstring, fsize, 1, f);
+		fclose(f);
+	
+		tempstring[fsize] = 0;
+		printf("%s\n", tempstring);
+		syscall(SYS_SAVE_VAR, varname->value, tempstring);
 		exit(0);
 	}
 	else {
@@ -320,20 +339,6 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 		// child is terminated here
 		// listjobs stuff goes here
 	}
-	dup2(saved_stdout, 1);
-	close(saved_stdout);
-	FILE *f = fopen(".TEMP.txt", "rb");
-	fseek(f, 0, SEEK_END);
-	long fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);
-
-	char *tempstring = malloc(fsize + 1);
-	fread(tempstring, fsize, 1, f);
-	fclose(f);
-
-	tempstring[fsize] = 0;
-	
-	syscall(SYS_SAVE_VAR, varname->value, tempstring);
 	
 	//	free(argstr);
 	tk_free(varname);
