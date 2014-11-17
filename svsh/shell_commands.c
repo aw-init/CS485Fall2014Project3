@@ -109,9 +109,9 @@ void var_value(struct token_t *var_token)
 	{
 		char* var_definition = (char*) malloc(SYS_BUFFERSIZE);
 		syscall(SYS_GET_VAR, var_token->value, var_definition, SYS_BUFFERSIZE);
-		strncpy(var_token->value,var_definition, sizeof(var_token->value));
+		free(var_token->value);
+		var_token->value = var_definition;
 		var_token->ttype = WORD;
-		free(var_definition);
 	}
 
 }
@@ -190,8 +190,12 @@ char** create_arglist(struct token_t *command, struct llist_t *arglisttokens){
 			int slen = strlen(iter->value->value);
 			nargv[i] = malloc(sizeof(char) * (slen+1));
 			strcpy(nargv[i], iter->value->value);
+			i++;
 		});
 	}
+	//for(int i=0; i<len+2;i++){
+	//	printf(
+	//}
 	return nargv;	
 	
 }
@@ -231,8 +235,10 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 		if (pid == 0) {
 			// child is running here
 			char ** nargv = create_arglist(command, arglist);
-			execvp(nargv[0],nargv);	
-				
+			int retval = execvp(nargv[0],nargv);	
+			if(retval == -1)
+				printf("%s\n", strerror(errno));
+			exit(0);		
 		}
 		else {
 			// parent is running
@@ -250,9 +256,10 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 		pid_t pid = fork();
 		if (pid == 0) {
 			char ** nargv = create_arglist(command, arglist);
-			execvp(nargv[0],nargv);	
-			if(errno != 1)
-				printf("Incorrect input");
+			int retval = execvp(nargv[0],nargv);	
+			if(retval == -1)
+				printf("%s\n", strerror(errno));
+			exit(0);
 		}
 		else {
 			int errormsg = 0;
@@ -301,28 +308,11 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 		dup2(fd, 1);
 		dup2(fd, 2);
 		close(fd);
-		if(arglist == NULL){
-			char *nargv[2]={command->value,NULL};
-			execv(command->value,nargv);
-		}
-		else{
-			int len = ll_length(arglist);
-			char **nargv = malloc(sizeof(char*) * (len+2));
-			struct llist_t *iter = arglist;
-			nargv[0] = malloc(sizeof(char) * (strlen(command->value)+1));
-			strncpy(nargv[0],command->value, sizeof(nargv[0]));
-			int i = 1;
-			if(iter != NULL)
-				ll_foreach(iter, {
-					int slen = strlen(iter->value->value);
-					nargv[i] = malloc(sizeof(char) * (slen+1));
-					strcpy(nargv[i], iter->value->value);
-				//	printf("nargv %d: %s\n",i,iter->value->value);
-				});
-			nargv[len] = NULL;
-			execv(command->value, nargv);	
-			//printf("%d\n", errno);
-		}
+		char ** nargv = create_arglist(command, arglist);
+		int retval = execvp(nargv[0],nargv);	
+		if(retval == -1)
+			printf("%s\n", strerror(errno));
+		exit(0);
 	}
 	else {
 		int errormsg = 0;

@@ -112,16 +112,17 @@ run:
 	| inputcmd WHITESPACE arglist{
 		cmd_run($1, $3, 0);
 	}
-	;
-assignto: ASSIGNTO WHITESPACE VARIABLE WHITESPACE WORD WHITESPACE arglist {
-		struct token_t *var = tk_new(VARIABLE, $3);
-		struct token_t *cmd = tk_new(WORD, $5);
-		cmd_assignto(var, cmd, $7); // add arglist
+	| inputcmd {
+		cmd_run($1, NULL, 0);
 	}
-	| ASSIGNTO WHITESPACE VARIABLE WHITESPACE WORD {
-		struct token_t *var = tk_new(VARIABLE, $3);
-		struct token_t *cmd = tk_new(WORD, $5);
-		cmd_assignto(var, cmd, NULL); // add arglist
+	;
+assignto: ASSIGNTO WHITESPACE VARIABLE WHITESPACE inputcmd WHITESPACE arglist {
+		struct token_t *var= tk_new(VARIABLE, $3); 
+		cmd_assignto(var, $5, $7); // add arglist
+	}
+	| ASSIGNTO WHITESPACE VARIABLE WHITESPACE inputcmd {
+		struct token_t *var= tk_new(VARIABLE, $3); 
+		cmd_assignto(var, $5, NULL); // add arglist
 	}
 	;
 
@@ -138,7 +139,6 @@ int yyerror(char *s)
 	return 1;
 }
 int main(int argc, char **argv) {
-	atexit(cmd_bye);
 	syscall(SYS_SAVE_VAR, "$PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games");
 //	char var_definition[1000];
 //	syscall(SYS_GET_VAR, "$PATH", var_definition, 1000);
