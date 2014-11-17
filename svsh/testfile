@@ -1,4 +1,9 @@
-cd directory_1
+$var1 = ls
+$var2 = -lt
+$var1 $var2
+run $var1 $var2
+run $var1 $var2 <bg>
 /bin/cat file1 file2 file3
 ls -lt
 /bin/wc file1
+assignto $var3 $var1 $var2
