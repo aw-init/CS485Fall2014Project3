@@ -103,23 +103,15 @@ void cmd_listjobs()
 
 /*Given a token_t, checks if it's a variable and then replaces the token values with the variable value*/
 void var_value(struct token_t *var_token)
-{
+{	
+	 
 	if(var_token->ttype == VARIABLE)
 	{
-		char var_definition[SYS_BUFFERSIZE];
+		char* var_definition = (char*) malloc(SYS_BUFFERSIZE);
 		syscall(SYS_GET_VAR, var_token->value, var_definition, SYS_BUFFERSIZE);
 		strncpy(var_token->value,var_definition, sizeof(var_token->value));
-		/*
-		variableList* currentVar = varList;
-		while(currentVar != NULL)
-		{
-			if(strcmp(var_token->value,currentVar->name)==0)
-				strncpy(var_token->value,currentVar->value,sizeof(var_token->value));
-			else
-				currentVar = currentVar->next;
-				
-		}
-		*/
+		var_token->ttype = WORD;
+		free(var_definition);
 	}
 
 }
@@ -130,9 +122,7 @@ char* cmd_defprompt(struct token_t *nprompt)
 		PrintToken(DEFPROMPT, "defprompt", "defprompt");
 		PrintToken(nprompt->ttype, nprompt->value, "arg 1");
 	}
-	printf("%s\n",nprompt->value);
 	var_value(nprompt);
-	printf("%s\n",nprompt->value);
 	prompt = nprompt->value;
 	
 	//tk_free(nprompt);
@@ -161,33 +151,7 @@ void add_var(char* name, char* value)
 	else{
 		syscall(SYS_SAVE_VAR, name, value);
 	}
-	/*
-			
-	int found = 0;
-	//Check to see if the variable has already been created
-	while(currentVar != NULL && !found )
-	{
-		if(strcmp(currentVar->name, name) == 0)
-		{
-			strncpy(currentVar->value, value, sizeof(currentVar->value));
-			found = 1;
-		}
-		currentVar = currentVar->next;
-	}	
-
-	if(!found){
-		//printf("Var not found! Adding to list now...\n");
-		variableList * addition = malloc(sizeof(variableList));
-		strncpy(addition->name, name, sizeof(addition->name));
-		strncpy(addition->value, value, sizeof(addition->value));
-		addition->prev = NULL;
-		addition->next = varList;
-		if(varList != NULL)
-			varList->prev = addition;
-		varList = addition;
-		
-	}
-	*/
+	
 	
 }
 
@@ -214,6 +178,8 @@ void cmd_bye()
 
 void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 {
+	
+	
 	/*
 		We still need to add some error checking to exec
 		It currently fails silently if it gives an invalid path
@@ -234,11 +200,17 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 		if(bg)
 			PrintToken(BG, "<bg>", "background");
 	}
+	var_value(command);
+	iter = arglist;
+	if(iter != NULL)
+		ll_foreach(iter, {
+			var_value(iter->value);
+		});
 	if (bg) {
 		pid_t pid = fork();
 		if (pid == 0) {
 			// child is running here
-			printf("Inside bg fork\n");
+			
 			if(arglist == NULL){
 				// construct arglist without arguments
 				char *nargv[2]={command->value,NULL};
@@ -281,7 +253,7 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 	else {
 		pid_t pid = fork();
 		if (pid == 0) {
-			printf("Inside non-bg fork\n");
+			
 			if(arglist == NULL){
 				char *nargv[2]={command->value,NULL};
 				execv(command->value,nargv);
@@ -302,8 +274,10 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 					});
 				nargv[len] = NULL;
 				execv(command->value, nargv);	
-				printf("%d\n", errno);
+			
 			}
+			if(errno != 1)
+				printf("Incorrect input");
 		}
 		else {
 			int errormsg = 0;
@@ -338,6 +312,12 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 //	char *argstr = ll_tostring(arglist);
 //	printf("assigning the result of {%s %s} to %s", command->value, argstr, varname->value);
 	
+	var_value(command);
+	struct llist_t *iter = arglist;
+	if(iter != NULL)
+		ll_foreach(iter, {
+			var_value(iter->value);
+		});
 	
 	int saved_stdout = dup(1);
 	pid_t pid = fork();

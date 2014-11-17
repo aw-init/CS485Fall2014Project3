@@ -19,6 +19,7 @@ static char* prompt = "svsh";
 %token <string> STRING
 %token <string> WORD
 %token <string> VARIABLE 
+%type <token> inputcmd;
 %type <token> arg
 %type <llist> arglist
 %%
@@ -87,32 +88,29 @@ arg:
 	| VARIABLE { $$ = tk_new(VARIABLE, $1); }
 	| STRING {$$ = tk_new(STRING, $1); }
 	;
-
+inputcmd:	
+	WORD { $$ = tk_new(WORD, $1); }
+	| VARIABLE { $$ = tk_new(VARIABLE, $1); }
+	;
 run:
-	RUN WHITESPACE WORD WHITESPACE arglist {
-		struct token_t *cmd = tk_new(WORD, $3);
-		cmd_run(cmd, $5, 0);
+	RUN WHITESPACE inputcmd WHITESPACE arglist {
+		cmd_run($3, $5, 0);
 	}
 
-	| RUN WHITESPACE WORD WHITESPACE arglist WHITESPACE BG {
-		struct token_t *cmd = tk_new(WORD, $3);
-		cmd_run(cmd, $5, 1);
+	| RUN WHITESPACE inputcmd WHITESPACE arglist WHITESPACE BG {
+		cmd_run($3, $5, 1);
 	}
-	| RUN WHITESPACE WORD{
-		struct token_t *cmd = tk_new(WORD, $3);
-		cmd_run(cmd, NULL, 0);
+	| RUN WHITESPACE inputcmd{
+		cmd_run($3, NULL, 0);
 	}
-	| RUN WHITESPACE WORD WHITESPACE BG{
-		struct token_t *cmd = tk_new(WORD, $3);
-		cmd_run(cmd, NULL, 1);
+	| RUN WHITESPACE inputcmd WHITESPACE BG{
+		cmd_run($3, NULL, 1);
 	}
-	| WORD WHITESPACE arglist WHITESPACE BG {
-		struct token_t *cmd = tk_new(WORD, $1);
-		cmd_run(cmd, $3, 1);
+	| inputcmd WHITESPACE arglist WHITESPACE BG {
+		cmd_run($1, $3, 1);
 	}
-	| WORD WHITESPACE arglist{
-		struct token_t *cmd = tk_new(WORD, $1);
-		cmd_run(cmd, $3, 0);
+	| inputcmd WHITESPACE arglist{
+		cmd_run($1, $3, 0);
 	}
 	;
 assignto: ASSIGNTO WHITESPACE VARIABLE WHITESPACE WORD WHITESPACE arglist {
