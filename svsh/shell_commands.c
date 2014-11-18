@@ -147,7 +147,7 @@ void cmd_cd(struct token_t *path)
 
 void add_var(char* name, char* value)
 {
-	printf("%s %s",name,value);
+	
 	char newvalue[SYS_BUFFERSIZE];
 	char newname[SYS_BUFFERSIZE];
 	strncpy(newname,name,strlen(name));
@@ -161,7 +161,10 @@ void add_var(char* name, char* value)
 		
 	}
 	else{
-		syscall(SYS_SAVE_VAR, newname, newvalue);
+		int retval = syscall(SYS_SAVE_VAR, newname, newvalue);
+		if(retval==-1){
+			printf("error: The system has reached it max number of allowed variables\n");
+		}
 	}
 	
 	
@@ -174,7 +177,7 @@ void cmd_assign(struct token_t *varname, struct token_t *vardef)
 		PrintToken(EQ, "=", "assignment");
 		PrintToken(vardef->ttype, vardef->value, "variable_def");
 	}
-	printf("set %s = %s\n", varname->value, vardef->value);
+	
 	add_var(varname->value,vardef->value);
 	tk_free(varname);
 	tk_free(vardef);
@@ -316,7 +319,7 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 	int saved_stdout = dup(1);
 	pid_t pid = fork();
 	if (pid == 0) {
-		int fd = open(".TEMP.txt", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+		int fd = open(".TEMP.txt", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 		dup2(fd, 1);
 		dup2(fd, 2);
 		close(fd);
@@ -324,8 +327,13 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 		int retval = execvp(nargv[0],nargv);	
 		if(retval == -1)
 			printf("%s\n", strerror(errno));
-		dup2(saved_stdout, 1);
-		close(saved_stdout);
+		exit(0);
+	}
+	else {
+		int errormsg = 0;
+		pid_t child = wait(&errormsg);
+		// child is terminated here
+		// listjobs stuff goes here
 		FILE *f = fopen(".TEMP.txt", "rb");
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
@@ -336,15 +344,18 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 		fclose(f);
 	
 		tempstring[fsize] = 0;
-		printf("%s\n", tempstring);
-		syscall(SYS_SAVE_VAR, varname->value, tempstring);
-		exit(0);
-	}
-	else {
-		int errormsg = 0;
-		pid_t child = wait(&errormsg);
-		// child is terminated here
-		// listjobs stuff goes here
+		dup2(saved_stdout, 1);
+		dup2(saved_stdout, 2);
+		close(saved_stdout);
+		if((fsize+1) < 1000)
+			syscall(SYS_SAVE_VAR, varname->value, tempstring);
+		else{
+			printf("error: command returns more than 1000 characters\n");	
+		}
+		dup2(saved_stdout, 1);
+		dup2(saved_stdout, 2);
+		close(saved_stdout);
+		free(tempstring);
 	}
 	
 	//	free(argstr);
