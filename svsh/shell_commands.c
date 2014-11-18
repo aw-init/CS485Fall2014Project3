@@ -108,8 +108,12 @@ void var_value(struct token_t *var_token)
 	if(var_token->ttype == VARIABLE)
 	{
 		char* var_definition = (char*) malloc(SYS_BUFFERSIZE);
-		syscall(SYS_GET_VAR, var_token->value, var_definition, SYS_BUFFERSIZE);
+		char newvar[SYS_BUFFERSIZE];
+		int var_len;
+		syscall(SYS_GET_VAR, var_token->value, newvar, &var_len);
+		strncpy(var_definition,newvar, var_len);
 		free(var_token->value);
+		var_definition[var_len] = '\0';
 		var_token->value = var_definition;
 		var_token->ttype = WORD;
 	}
@@ -143,10 +147,13 @@ void cmd_cd(struct token_t *path)
 
 void add_var(char* name, char* value)
 {
+	printf("%s %s",name,value);
 	char newvalue[SYS_BUFFERSIZE];
 	char newname[SYS_BUFFERSIZE];
 	strncpy(newname,name,strlen(name));
+	newname[strlen(name)] = '\0';
 	strncpy(newvalue,value,strlen(value));
+	newvalue[strlen(value)] = '\0';
 
 	if(strcmp("$ShowTokens",name)==0)
 	{
@@ -325,7 +332,7 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 		fseek(f, 0, SEEK_SET);
 
 		char *tempstring = malloc(fsize + 1);
-		fread(tempstring, fsize, 1, f);
+		fread(tempstring, fsize,1 , f);
 		fclose(f);
 	
 		tempstring[fsize] = 0;

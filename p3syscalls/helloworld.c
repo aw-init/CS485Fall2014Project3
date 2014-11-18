@@ -9,7 +9,7 @@
 #define __NR_SaveVar 315
 #define __NR_GetVar 316
 #define __NR_NextVar 317
-main(){
+int main(){
    int retval; 
    int retvalMyCall;
     
@@ -17,13 +17,19 @@ main(){
    printf("About to call the new helloworld() system call\n");
    retval = syscall(__NR_helloworld, author, strlen(author));
    retvalMyCall = syscall(__NR_SaveVar, author, "I am really happy!");
+   retvalMyCall = syscall(__NR_SaveVar, author, "rodger");
+   
+
    i_SaveVar2 = syscall(__NR_SaveVar, "Andrew 12", "Rodger");
    int strlen;
    int ret2;
    char vardef[1000];
    strcpy(vardef,"didn't get called");
    ret2 = syscall(__NR_GetVar, author, vardef, &strlen);
+   ret2 = syscall(__NR_GetVar, author, vardef, &strlen);
+
    printf("Done calling helloworld()\n");
+
    printf("Your helloworld() system call returned the value %d\n", retval);
    printf("Your mysyscall  system call returned the value %d\n", retvalMyCall);
    printf("2nd save var call returned value %d\n", i_SaveVar2);
