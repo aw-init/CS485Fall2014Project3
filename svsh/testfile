@@ -1,7 +1,0 @@
-$ShowTokens = 0
-$var2 = -lt
-$var1 $var2
-run $var1 $var2
-/bin/cat file1 file2 file3
-/usr/bin/wc file1
-assignto $var3 $var1 
