@@ -1,3 +1,6 @@
+System Call
+	The system call is implemented by allocating global static 2d array of 20 elements with each one being a 1000 character array to represent a string.  Then in save variable we copy the user space string to kernel and then save it into the array.  The way we find the right spot is to iterate through the array and find either existing string or empty slot.  It can not save more than 20 system variable.  The implementation for get var operate in same fashion, basically iterate through the array and try to find matching variable name, and return the defition.  Once it finds a match, copy the variable defintion to user space and return to caller. The get next var does the samething as get var except upon matching the variable, it return the variable comes right after it in the array.
+ 
 Lexer
 	Our scanner is implemented in the lex language, and generated using flex. It simply defines the tokens declared in the spec, and passes them as a stream to the parser. The tokens are more specific than the ones in the assignment, in order to make parsing more straightforward, and to help find errors.
 
