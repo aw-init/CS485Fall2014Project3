@@ -115,6 +115,9 @@ run:
 	| inputcmd {
 		cmd_run($1, NULL, 0);
 	}
+	| inputcmd WHITESPACE BG{
+		cmd_run($1, NULL, 1);
+	}
 	;
 assignto: ASSIGNTO WHITESPACE VARIABLE WHITESPACE inputcmd WHITESPACE arglist {
 		struct token_t *var= tk_new(VARIABLE, $3); 
