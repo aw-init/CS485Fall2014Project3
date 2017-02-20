@@ -30,6 +30,8 @@ run { return RUN; }
 listjobs { return LISTJOBS;  }
 
 bye { return BYE;  }
+exit { return BYE; }
+quit { return BYE; }
 
 assignto { return ASSIGNTO;  }
 
@@ -38,7 +40,11 @@ assignto { return ASSIGNTO;  }
 }
 
 \".+\" {
-	yylval.string = strdup(yytext);
+	int len = strlen(yytext) - 2;
+	char *buff = (char*) malloc(sizeof(char) * (len+1));
+	memcpy(buff, yytext+1, len);
+	buff[len] = '\0';
+	yylval.string = buff;
 	return STRING;
 }
 

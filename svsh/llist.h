@@ -4,14 +4,19 @@ struct token_t {
 	char *value;
 	int ttype;
 };
+void tk_modify(struct token_t *token, int ttype, char *value);
+
+struct token_t *tk_new(int ttype, char *value);
+
+void tk_free(struct token_t *token);
+
+/* a simple versatile linked list class */
 struct llist_t {
 	struct token_t *value;
 	struct llist_t *next;
 };
 
-struct token_t *tk_new(int ttype, char *value);
 
-void tk_free(struct token_t *token);
 
 // create a new one-element list
 struct llist_t* ll_new(struct token_t *value);

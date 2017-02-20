@@ -1,13 +1,17 @@
 %{
-/*
-
-*/
 #include <stdio.h>
 #include "shell_commands.h"
 #include "llist.h"
+#include "nametable.h"
+
+#ifdef SYSCALL
 #define SYS_SAVE_VAR 315
 #define SYS_GET_VAR 316
+#endif
+
+struct nametable_t GLOBAL_NAMETABLE = { NULL, NULL, 0 };
 static char* prompt = "svsh";
+
 %}
 %define parse.error verbose
 %token EQ WHITESPACE COMMENT DEFPROMPT ASSIGNTO CD LISTJOBS BYE RUN BG NEWLINE
@@ -43,8 +47,7 @@ command:
 	; 
 defprompt:
 	DEFPROMPT WHITESPACE arg {
-		//free(prompt);
-		prompt = cmd_defprompt($3);
+		cmd_defprompt(&prompt, $3);
 	}
 	;
 
@@ -57,7 +60,12 @@ cd:
 assign:
 	VARIABLE WHITESPACE EQ WHITESPACE arg {
 		struct token_t *var = tk_new(VARIABLE, $1);
-		cmd_assign(var, $5);
+
+		// contents of variable should always be a string
+		struct token_t *val = $5;
+		val->ttype = STRING;
+
+		cmd_assign(var, val);
 	}
 	;
 
@@ -92,6 +100,7 @@ inputcmd:
 	WORD { $$ = tk_new(WORD, $1); }
 	| VARIABLE { $$ = tk_new(VARIABLE, $1); }
 	;
+
 run:
 	RUN WHITESPACE inputcmd WHITESPACE arglist {
 		cmd_run($3, $5, 0);
@@ -142,10 +151,11 @@ int yyerror(char *s)
 	return 1;
 }
 int main(int argc, char **argv) {
-	syscall(SYS_SAVE_VAR, "$PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games");
+	
+	//syscall(SYS_SAVE_VAR, "$PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games");
 //	char var_definition[1000];
 //	syscall(SYS_GET_VAR, "$PATH", var_definition, 1000);
 //	printf("%s\n",var_definition);	
-	printf("svsh > ");
+	printf("%s > ", prompt);
 	yyparse();
 }

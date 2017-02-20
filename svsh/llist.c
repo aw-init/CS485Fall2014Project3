@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "llist.h"
+
 struct token_t *tk_new(int tt, char *val)
 {
 	struct token_t *tok = malloc(sizeof(struct token_t));
@@ -12,6 +13,12 @@ void tk_free(struct token_t *tok)
 {
 	free(tok->value);
 	free(tok);
+}
+void tk_modify(struct token_t *token, int ttype, char *value)
+{
+	token->ttype = ttype;
+	free(token->value);
+	token->value = value;
 }
 struct llist_t *ll_new(struct token_t *value)
 {

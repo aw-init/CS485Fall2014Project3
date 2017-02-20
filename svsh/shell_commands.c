@@ -9,12 +9,14 @@
 #include <unistd.h>
 #include "shell_commands.h"
 #include <sys/stat.h>
+#include "nametable.h"
 #include <fcntl.h>
 #define SYS_BUFFERSIZE 1000
 #define SYS_SAVE_VAR 315
 #define SYS_GET_VAR 316
 
-// replace this later with environment variable call
+extern struct nametable_t GLOBAL_NAMETABLE;
+
 int ShowTokens = 1;
 struct pidlist_t {
 	pid_t pid;
@@ -53,7 +55,7 @@ void PrintToken(int ttype, char *value, char *usage)
 	}
 	printf("Token Type = %s\tToken = %s\tUsage = %s\n", stype, value, usage);
 }
-int proc_running(pid_t pid) {
+int is_proc_running(pid_t pid) {
 	int status;
 	pid_t result = waitpid(pid, &status, WNOHANG);
 	if (result == 0) {
@@ -80,7 +82,7 @@ void cmd_listjobs()
 	struct pidlist_t *tmp = NULL;
 	int length = 0;
 	while (iter != NULL) {
-		if (proc_running(iter->pid)) {
+		if (is_proc_running(iter->pid)) {
 			printf("%d %s\n", iter->pid, iter->name);
 			length++;
 			struct pidlist_t *node = malloc(sizeof(struct pidlist_t));
@@ -102,69 +104,100 @@ void cmd_listjobs()
 }
 
 /*Given a token_t, checks if it's a variable and then replaces the token values with the variable value*/
-void var_value(struct token_t *var_token)
-{	
-	 
+int var_value(struct token_t *var_token)
+{	 
+	/* safely modifies var_token */
 	if(var_token->ttype == VARIABLE)
 	{
+		#ifdef SYSCALL
 		char* var_definition = (char*) malloc(SYS_BUFFERSIZE);
 		char newvar[SYS_BUFFERSIZE];
 		int var_len;
 		syscall(SYS_GET_VAR, var_token->value, newvar, &var_len);
 		strncpy(var_definition,newvar, var_len);
-		free(var_token->value);
 		var_definition[var_len] = '\0';
-		var_token->value = var_definition;
-		var_token->ttype = WORD;
+
+		tk_modify(var_token, WORD, var_definition);
+
+		#else
+		char *result = nt_get_var(&GLOBAL_NAMETABLE, var_token->value);
+		if (result == NULL)
+		{
+			printf("Could not find value of variable %s\n", var_token->value);
+			return -1;
+		}
+		else
+		{
+			tk_modify(var_token, WORD, result);
+			return 0;
+		}
+		#endif
 	}
+	return 0;
 
 }
 
-char* cmd_defprompt(struct token_t *nprompt)
-{	char* prompt;
+void cmd_defprompt(char **prompt, struct token_t *nprompt)
+{
+	/* does not modify nprompt */
 	if (ShowTokens) {
 		PrintToken(DEFPROMPT, "defprompt", "defprompt");
 		PrintToken(nprompt->ttype, nprompt->value, "arg 1");
 	}
-	var_value(nprompt);
-	prompt = nprompt->value;
-	
-	//tk_free(nprompt);
-	printf("set new prompt to %s\n", prompt);
-	return prompt;
+
+	if (var_value(nprompt) == 0) {
+		(*prompt) = strdup(nprompt->value);
+		printf("set new prompt to %s\n", *prompt);
+	}
+	tk_free(nprompt);
 }
+
 void cmd_cd(struct token_t *path)
 {
+	/* does not modify path */
 	if (ShowTokens) {
 		PrintToken(CD, "cd", "cd");
 		PrintToken(path->ttype, path->value, "arg 1");
 	}
+
+	int success = var_value(path);
+	if (success < 0) {
+		return;
+	}
+
 	printf("change directory to %s\n", path->value);
 	if(chdir(path->value)<0)
 		perror("cd");
+
 	tk_free(path);
 }
 
 void add_var(char* name, char* value)
 {
-	
-	char newvalue[SYS_BUFFERSIZE];
-	char newname[SYS_BUFFERSIZE];
-	strncpy(newname,name,strlen(name));
-	newname[strlen(name)] = '\0';
-	strncpy(newvalue,value,strlen(value));
-	newvalue[strlen(value)] = '\0';
-
+	/* does not modify name, value */
 	if(strcmp("$ShowTokens",name)==0)
 	{
 		ShowTokens = atoi(value);
 		
 	}
 	else{
+		#ifdef SYSCALL
+		char newvalue[SYS_BUFFERSIZE];
+		char newname[SYS_BUFFERSIZE];
+		strncpy(newname,name,strlen(name));
+		newname[strlen(name)] = '\0';
+		strncpy(newvalue,value,strlen(value));
+
+		newvalue[strlen(value)] = '\0';
+
 		int retval = syscall(SYS_SAVE_VAR, newname, newvalue);
 		if(retval==-1){
 			printf("error: The system has reached it max number of allowed variables\n");
 		}
+
+		#else
+		nt_save_var(&GLOBAL_NAMETABLE, name, value);
+		#endif
 	}
 	
 	
@@ -177,8 +210,14 @@ void cmd_assign(struct token_t *varname, struct token_t *vardef)
 		PrintToken(EQ, "=", "assignment");
 		PrintToken(vardef->ttype, vardef->value, "variable_def");
 	}
+
+	int success = var_value(vardef);
+	if (success < 0) {
+		return;
+	}
 	
 	add_var(varname->value,vardef->value);
+
 	tk_free(varname);
 	tk_free(vardef);
 }
@@ -192,25 +231,41 @@ void cmd_bye()
 }
 
 char** create_arglist(struct token_t *command, struct llist_t *arglisttokens){
+	/* convert llist into char**, insert command at the beginning */
 	int len = ll_length(arglisttokens);
+
+	/*
+		number of elements in arglisttokens
+		+1 for command at the beginning
+		+1 for the NULL at the end (required by execvp)
+	*/
 	char ** nargv =(char**)  malloc(sizeof(char*) * (len + 2));
+
+	/*
 	nargv[0] = malloc(sizeof(char) * (strlen(command->value)+1));
 	strncpy(nargv[0],command->value, strlen(command->value)+1);
+	*/
+	nargv[0] = strdup(command->value);
 	nargv[len+1] = NULL;
+
 	if(arglisttokens != NULL){
-		// construct arglist with arguments
+		// fill arglist with llist arguments
+
+		// prepare iterators
 		struct llist_t *iter = arglisttokens;
 		int i = 1;
+
 		ll_foreach(iter, {
+			nargv[i] = strdup(iter->value->value);
+			/*
 			int slen = strlen(iter->value->value);
 			nargv[i] = malloc(sizeof(char) * (slen+1));
 			strcpy(nargv[i], iter->value->value);
+			*/
 			i++;
 		});
+
 	}
-	//for(int i=0; i<len+2;i++){
-	//	printf(
-	//}
 	return nargv;	
 	
 }
@@ -239,12 +294,24 @@ void cmd_run(struct token_t *command, struct llist_t *arglist, int bg)
 		if(bg)
 			PrintToken(BG, "<bg>", "background");
 	}
-	var_value(command);
+
+	// replace variable in command
+	int success = var_value(command);
+	if (success < 0) {
+		return;
+	}
+
+	// replace all variables in the arglist
 	iter = arglist;
 	if(iter != NULL)
 		ll_foreach(iter, {
-			var_value(iter->value);
+			int success = var_value(iter->value);
+			if (success < 0) {
+				return;
+			}
 		});
+
+
 	if (bg) {
 		pid_t pid = fork();
 		if (pid == 0) {
@@ -309,11 +376,17 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 //	char *argstr = ll_tostring(arglist);
 //	printf("assigning the result of {%s %s} to %s", command->value, argstr, varname->value);
 	
-	var_value(command);
+	int success = var_value(command);
+	if (success < 0) {
+		return;
+	}
 	struct llist_t *iter = arglist;
 	if(iter != NULL)
 		ll_foreach(iter, {
-			var_value(iter->value);
+			int success = var_value(iter->value);
+			if (success < 0) {
+				return;
+			}
 		});
 	
 	int saved_stdout = dup(1);
@@ -348,8 +421,16 @@ void cmd_assignto(struct token_t *varname, struct token_t *command, struct llist
 		dup2(saved_stdout, 2);
 		close(saved_stdout);
 		if((fsize+1) < 1000)
+		{
+			#ifdef SYSCALL
 			syscall(SYS_SAVE_VAR, varname->value, tempstring);
-		else{
+
+			#else
+			nt_save_var(&GLOBAL_NAMETABLE, varname->value, tempstring);
+			#endif
+		}
+		else
+		{
 			printf("error: command returns more than 1000 characters\n");	
 		}
 		dup2(saved_stdout, 1);
