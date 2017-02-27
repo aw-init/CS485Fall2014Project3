@@ -1,15 +1,36 @@
-CS485Fall2014Project3
-=====================
-Team - Rodger Friesen, Jun Huang, David Tooley, Andrew Ward
-Files Submitted:
-Folder p3syscalls:
-p3syscalls.c - System Calls
-helloworld.c - System Calls test file
-README - Tutorial on installing System calls
-Folder svsh:
-parse.y - Parser
-scan.l - Scanner
-shell_commands.c - Shell commands
-shell_commands.h - Header file for Shell Commands
-llist.c - Implementation of link lists used
-llist.h - Header file for llist.c
+# Svsh
+
+A simple shell written in c.
+by Rodger Friesen, Jun Huang, David Tooley, Andrew Ward
+
+Commands:
+
+    # execute a program
+    run command arg1 arg2
+
+    # execute a program in the background
+    run command arg1 arg2 <bg>
+
+	# can execute things without "run" as well
+    command arg1 arg2
+    command arg1 arg2 <bg>
+
+    # list the currently running jobs
+    listjobs
+
+    # change the prompt displayed
+    defprompt text
+
+    # change the current working directory
+    cd path/to/directory
+
+    # assign environment variables
+    $varname = value
+
+    # execute command and pipe stdout to the variable
+    assignto $varname command arg1 arg2
+
+    # exit the shell
+    bye
+    exit
+
