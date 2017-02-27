@@ -1,6 +1,7 @@
 # Svsh
 
 A simple shell written in c.
+
 by Rodger Friesen, Jun Huang, David Tooley, Andrew Ward
 
 Commands:
